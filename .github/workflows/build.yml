@@ -34,7 +34,7 @@ jobs:
         # Build onefile exe, named ElderlyMonitor, windowed (no console), UAC admin requested (optional but good for killing procs)
         # Note: uac-admin requires 'pyinstaller --uac-admin ...' if available or manifest.
         # Simple build first:
-        pyinstaller --noconfirm --onefile --windowed --name "ElderlyMonitor" --hidden-import=PySide6 --collect-all src src/main.py
+        pyinstaller --noconfirm --onefile --windowed --name "ElderlyMonitor" --hidden-import=PySide6 --collect-all src run.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4

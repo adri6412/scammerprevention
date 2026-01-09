@@ -21,6 +21,6 @@ echo.
 echo [2/2] Starting Protection Service...
 echo The application will appear in your System Tray.
 echo.
-python src/main.py
+python run.py
 
 pause
