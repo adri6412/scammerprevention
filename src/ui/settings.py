@@ -5,9 +5,14 @@ import os
 import json
 import requests
 
-SETTINGS_FILE = 'settings.json' # Saved in src/data implied, handled by main/detector paths mostly. 
-# We'll use absolute path relative to this file to be safe
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SETTINGS_FILE = 'settings.json' 
+import sys
+
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 SETTINGS_PATH = os.path.join(DATA_DIR, 'settings.json')
 

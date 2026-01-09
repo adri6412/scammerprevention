@@ -24,19 +24,23 @@ It sits in the system tray and monitors for suspicious behaviors typical of scam
     - This script automatically installs dependencies (`PySide6`, `psutil`, `pywin32`, `requests`) and starts the monitor.
 3.  The application will appear in the System Tray (bottom right).
 
-## 🎮 Simulation & Testing
-You don't need to wait for a scammer to test it.
-1.  Ensure **ElderlyMonitor** is running.
-2.  Run **`run_simulation.bat`**.
-3.  This script will:
-    - Create a harmless dummy process named `AnyDesk.exe`.
-    - Open a fake Banking Window.
-    - Trigger the **Red Alert Screen**.
+## 📦 Installation & Download
+
+### Option 1: Download Pre-built EXE (Recommended)
+1.  Go to the **[Releases](https://github.com/adri6412/scammerprevention/releases)** page.
+2.  Download `ElderlyMonitor.exe`.
+3.  Place it anywhere (e.g., Desktop) and run it.
+4.  It will create a `data/` folder next to itself to store your update rules.
+
+### Option 2: Run from Source
+1.  Clone this repository.
+2.  Run `install_and_run.bat`.
 
 ## ⚙️ Configuration & Rules
 
-The detection logic is data-driven and stored in `src/data/rules.json`.
-You can customize this file locally or configure "Settings" to download updates from a URL.
+The detection logic is data-driven.
+- **First Run**: The app creates a default `rules.json` in the `data/` folder.
+- **Updates**: Use the "Settings" menu in the Tray Icon to download updated rules from the web.
 
 ### Rule Format (`rules.json`)
 ```json

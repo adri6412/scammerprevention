@@ -3,7 +3,20 @@ import json
 import os
 import requests
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+import re
+import json
+import os
+import sys
+import requests
+
+if getattr(sys, 'frozen', False):
+    # Running as compiled exe: use the executable directory for storage
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    # Running from source: use src/../ (project root/src)
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DATA_DIR = os.path.join(BASE_DIR, 'data')
 RULES_FILE = os.path.join(DATA_DIR, 'rules.json')
 SETTINGS_FILE = os.path.join(DATA_DIR, 'settings.json')
 
