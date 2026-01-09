@@ -59,10 +59,21 @@ The detection logic is data-driven.
         "paypal",
         "refund"
     ],
+    ],
     "suspicious_cmds": [
         "tree.*",
         "netstat.*",
         "cipher /w"
+    ],
+    "safe_domains": [
+        "google.com",
+        "paypal.com",
+        "unicredit.it"
+    ],
+    "phishing_keywords": [
+        "login",
+        "verifica",
+        "secure"
     ]
 }
 ```
