@@ -1,0 +1,97 @@
+# ElderlyMonitor - Anti-Scam Protection Framework
+
+**ElderlyMonitor** is a Windows-based specialized security utility designed to protect non-technical users (elderly, inexperienced) from "Tech Support Scams". 
+It sits in the system tray and monitors for suspicious behaviors typical of scammers, such as the usage of Remote Access Tools (RATs) combined with Banking activities, or the execution of fake "hacker" commands in the terminal.
+
+## 🚀 Key Features
+
+*   **Remote Tool Detection**: Identifies usage of AnyDesk, TeamViewer, UltraViewer, RustDesk, and 15+ other remote control software.
+*   **Context-Aware Banking Protection**: triggering a **CRITICAL RED ALERT** if a Banking Website is opened while a Remote Tool is active.
+*   **Scam Pattern Recognition**: Detects usage of command-line tools used to fake infections (e.g., `tree`, `netstat`, `dir /s`, `eventvwr`).
+*   **Educational Warnings**: The alert screen provides clear, large-text warnings explaining *why* the situation is dangerous (e.g., "Real technicians never ask for passwords").
+*   **Full Screen Block**: A non-intrusive monitoring mode that switches to an aggressive "Always On Top" full-screen warning when a threat is detected.
+*   **Remote Updates**: Supports fetching new detection rules (JSON) from remote URLs (e.g., GitHub, Corporate Server) without reinstalling the app.
+
+## 📦 Installation
+
+### Prerequisites
+- Windows 10 or 11
+- Python 3.10+ (if running from source)
+
+### Quick Start (Pre-packaged)
+1.  Download the repository.
+2.  Double-click **`install_and_run.bat`**.
+    - This script automatically installs dependencies (`PySide6`, `psutil`, `pywin32`, `requests`) and starts the monitor.
+3.  The application will appear in the System Tray (bottom right).
+
+## 🎮 Simulation & Testing
+You don't need to wait for a scammer to test it.
+1.  Ensure **ElderlyMonitor** is running.
+2.  Run **`run_simulation.bat`**.
+3.  This script will:
+    - Create a harmless dummy process named `AnyDesk.exe`.
+    - Open a fake Banking Window.
+    - Trigger the **Red Alert Screen**.
+
+## ⚙️ Configuration & Rules
+
+The detection logic is data-driven and stored in `src/data/rules.json`.
+You can customize this file locally or configure "Settings" to download updates from a URL.
+
+### Rule Format (`rules.json`)
+```json
+{
+    "rats": [
+        "AnyDesk.exe",
+        "TeamViewer.exe",
+        "Supremo.exe"
+    ],
+    "banking_keywords": [
+        "banca",
+        "intesa",
+        "paypal",
+        "refund"
+    ],
+    "suspicious_cmds": [
+        "tree.*",
+        "netstat.*",
+        "cipher /w"
+    ]
+}
+```
+
+### Remote Updates
+1.  Right-click the System Tray icon -> **Settings / Update Rules**.
+2.  Add a URL pointing to a raw JSON file (e.g., GitHub Raw).
+3.  Click **"Download & Update Rules Now"**.
+4.  The system merges the new rules with your local database.
+
+## 🛠️ Development
+
+### Directory Structure
+```
+c:\Users\adri6\ElderlyMonitor\
+├── src\
+│   ├── main.py                 # Application Entry Point & Tray
+│   ├── core\
+│   │   ├── monitor.py          # Background Thread (psutil scanner)
+│   │   └── detector.py         # Heuristics Engine (Rule matcher)
+│   ├── ui\
+│   │   ├── alert_window.py     # Full-Screen Warning Interface
+│   │   └── settings.py         # Update Manager UI
+│   └── data\
+│       └── rules.json          # Detection Database
+├── tests\
+│   └── simulate_attack.py      # Safe Simulation Script
+├── install_and_run.bat         # User Launcher
+└── requirements.txt            # Python Dependencies
+```
+
+### Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+## ⚠️ Disclaimer
+This software is a **preventative measure**. It relies on heuristics (process names, window titles) and does not perform kernel-level inspection or antivirus scanning. It is designed to stop *social engineering* attacks, not sophisticated malware.
+Always ensure the user has a proper Antivirus installed.
