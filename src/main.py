@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle
 from PySide6.QtGui import QIcon, QAction
 
@@ -8,10 +9,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.core.monitor import SystemMonitor
 from src.ui.alert_window import AlertWindow
-from src.ui.settings import SettingsWindow
+from src.ui.settings import SettingsWindow, SETTINGS_PATH
+from src.utils import i18n
+from src.utils.logger import logger
 
 class ElderlyMonitorApp:
     def __init__(self):
+        self.load_initial_language()
+        
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False) # Keep running even if alert closes
 
@@ -23,18 +28,18 @@ class ElderlyMonitorApp:
             icon = self.app.style().standardIcon(QStyle.SP_ComputerIcon)
 
         self.tray_icon = QSystemTrayIcon(icon, self.app)
-        self.tray_icon.setToolTip("ElderlyMonitor: Protected")
+        self.tray_icon.setToolTip(i18n.get_text("tray_tooltip"))
         
         # Tray Menu
         menu = QMenu()
         
-        action_settings = QAction("Settings / Update Rules", self.app)
+        action_settings = QAction(i18n.get_text("tray_settings"), self.app)
         action_settings.triggered.connect(self.open_settings)
         menu.addAction(action_settings)
         
         menu.addSeparator()
         
-        action_quit = QAction("Exit Monitor", self.app)
+        action_quit = QAction(i18n.get_text("tray_exit"), self.app)
         action_quit.triggered.connect(self.app.quit)
         menu.addAction(action_quit)
         
@@ -50,7 +55,16 @@ class ElderlyMonitorApp:
         self.current_alert = None
         self.settings_window = None
 
-        print("Monitor started. Check tray icon.")
+        logger.info("ElderlyMonitor started. Check tray icon.")
+
+    def load_initial_language(self):
+        try:
+            if os.path.exists(SETTINGS_PATH):
+                with open(SETTINGS_PATH, 'r') as f:
+                    data = json.load(f)
+                    i18n.set_language(data.get('language', 'it'))
+        except Exception:
+            pass
 
     def open_settings(self):
         if not self.settings_window:
@@ -64,7 +78,7 @@ class ElderlyMonitorApp:
             if self.current_alert.process_pid == pid:
                 return
 
-        print(f"THREAT DETECTED: {details}")
+        logger.warning(f"THREAT DETECTED: {details}")
         
         # Show the Red Screen
         self.current_alert = AlertWindow(threat_type, details, pid)
@@ -73,7 +87,7 @@ class ElderlyMonitorApp:
 
     def handle_alert_action(self, action, pid):
         if action == "IGNORE":
-            print(f"User ignored threat for PID {pid}")
+            logger.info(f"User ignored threat for PID {pid}")
             self.monitor.add_ignored_pid(pid)
 
 

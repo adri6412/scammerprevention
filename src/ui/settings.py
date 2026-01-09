@@ -1,9 +1,11 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QListWidget, 
-                               QLineEdit, QPushButton, QHBoxLayout, QMessageBox)
+                               QLineEdit, QPushButton, QHBoxLayout, QMessageBox,
+                               QComboBox, QCheckBox, QGroupBox)
 from PySide6.QtCore import Qt
 import os
 import json
 import requests
+from src.utils import i18n, startup
 
 SETTINGS_FILE = 'settings.json' 
 import sys
@@ -20,19 +22,69 @@ class SettingsWindow(QWidget):
     def __init__(self, detector):
         super().__init__()
         self.detector = detector
-        self.setWindowTitle("Settings - ElderlyMonitor Update Manager")
-        self.setGeometry(300, 300, 500, 400)
-        
-        self.urls = self.load_urls()
-        
+        self.load_settings()
         self.init_ui()
 
+    def load_settings(self):
+        self.urls = []
+        self.current_lang = "it" # Default
+        self.startup_enabled = False
+
+        if os.path.exists(SETTINGS_PATH):
+            try:
+                with open(SETTINGS_PATH, 'r') as f:
+                    data = json.load(f)
+                    self.urls = data.get('update_urls', [])
+                    self.current_lang = data.get('language', 'it')
+                    # Startup state is truth from Registry, but we might store expectation? 
+                    # Actually better to read from Registry directly for the checkbox state.
+            except:
+                pass
+        
+        # Sync I18n
+        i18n.set_language(self.current_lang)
+        
+        # Check actual registry state
+        self.startup_enabled = startup.is_autorun_enabled()
+
     def init_ui(self):
+        self.setWindowTitle(i18n.get_text("settings_title"))
+        self.setGeometry(300, 300, 500, 500)
+        
         layout = QVBoxLayout()
         self.setLayout(layout)
         
-        # Header
-        layout.addWidget(QLabel("Manage Protection Rule Sources (JSON URLs)"))
+        # --- General Settings Group ---
+        grp_gen = QGroupBox(i18n.get_text("grp_general"))
+        gen_layout = QVBoxLayout()
+        
+        # Language
+        lang_layout = QHBoxLayout()
+        lang_layout.addWidget(QLabel(i18n.get_text("lbl_language")))
+        self.combo_lang = QComboBox()
+        self.combo_lang.addItem("Italiano", "it")
+        self.combo_lang.addItem("English", "en")
+        # Select current
+        index = self.combo_lang.findData(self.current_lang)
+        if index >= 0:
+            self.combo_lang.setCurrentIndex(index)
+        self.combo_lang.currentIndexChanged.connect(self.on_lang_changed)
+        lang_layout.addWidget(self.combo_lang)
+        gen_layout.addLayout(lang_layout)
+        
+        # Startup
+        self.chk_startup = QCheckBox(i18n.get_text("chk_startup"))
+        self.chk_startup.setChecked(self.startup_enabled)
+        self.chk_startup.stateChanged.connect(self.on_startup_changed)
+        gen_layout.addWidget(self.chk_startup)
+        
+        grp_gen.setLayout(gen_layout)
+        layout.addWidget(grp_gen)
+
+        layout.addSpacing(10)
+
+        # --- Rules Group --- (Existing Logic)
+        layout.addWidget(QLabel(i18n.get_text("lbl_manrules")))
         
         # List of URLs
         self.url_list = QListWidget()
@@ -40,7 +92,7 @@ class SettingsWindow(QWidget):
         layout.addWidget(self.url_list)
         
         # Remove Button
-        btn_remove = QPushButton("Remove Selected URL")
+        btn_remove = QPushButton(i18n.get_text("btn_remove_url"))
         btn_remove.clicked.connect(self.remove_url)
         layout.addWidget(btn_remove)
 
@@ -50,7 +102,7 @@ class SettingsWindow(QWidget):
         self.input_url.setPlaceholderText("https://example.com/scam_rules.json")
         add_layout.addWidget(self.input_url)
         
-        btn_add = QPushButton("Add URL")
+        btn_add = QPushButton(i18n.get_text("btn_add_url"))
         btn_add.clicked.connect(self.add_url)
         add_layout.addWidget(btn_add)
         
@@ -59,31 +111,49 @@ class SettingsWindow(QWidget):
         layout.addSpacing(20)
         
         # Update Now Button
-        self.btn_update = QPushButton("⚡ DOWNLOAD & UPDATE RULES NOW")
+        self.btn_update = QPushButton(i18n.get_text("btn_update"))
         self.btn_update.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 10px;")
         self.btn_update.setCursor(Qt.PointingHandCursor)
         self.btn_update.clicked.connect(self.run_update)
         layout.addWidget(self.btn_update)
         
         # Status Label
-        self.lbl_status = QLabel("Ready.")
+        self.lbl_status = QLabel(i18n.get_text("status_ready"))
         layout.addWidget(self.lbl_status)
 
+    def on_startup_changed(self, state):
+        is_checked = (state == Qt.Checked.value) # PySide6 enum or int
+        # Actually state is int. 2 is Checked.
+        if isinstance(state, int):
+            is_checked = (state == 2)
+        
+        success = startup.set_autorun(is_checked)
+        if not success:
+            QMessageBox.warning(self, "Error", "Failed to update registry. Try running as Administrator.")
+            # Revert checkbox if failed?
+            # self.chk_startup.setChecked(not is_checked) 
+
+    def on_lang_changed(self, index):
+        code = self.combo_lang.currentData()
+        self.current_lang = code
+        i18n.set_language(code)
+        self.save_urls() # Save settings
+        # Trigger UI refresh? For now, user needs to restart or reopen settings.
+        # We can implement a restart prompt.
+        QMessageBox.information(self, "Language Changed", "Please restart the application for all changes to take effect.\nRiavvia l'applicazione per applicare le modifiche.")
+
     def load_urls(self):
-        if os.path.exists(SETTINGS_PATH):
-            try:
-                with open(SETTINGS_PATH, 'r') as f:
-                    data = json.load(f)
-                    return data.get('update_urls', [])
-            except:
-                pass
-        return []
+        # Deprecated logic, moved to load_settings, but keeping signature if needed or removing
+        pass 
 
     def save_urls(self):
         if not os.path.exists(DATA_DIR):
             os.makedirs(DATA_DIR)
         
-        data = {'update_urls': self.urls}
+        data = {
+            'update_urls': self.urls,
+            'language': self.current_lang
+        }
         try:
             with open(SETTINGS_PATH, 'w') as f:
                 json.dump(data, f, indent=4)
@@ -107,7 +177,7 @@ class SettingsWindow(QWidget):
             self.save_urls()
 
     def run_update(self):
-        self.lbl_status.setText("Updating... please wait.")
+        self.lbl_status.setText(i18n.get_text("status_updating"))
         self.btn_update.setEnabled(False)
         self.repaint() # Force refresh
         
@@ -142,6 +212,6 @@ class SettingsWindow(QWidget):
         self.detector.save_rules()
         self.detector.load_rules() # Reload to be sure
         
-        self.lbl_status.setText(f"Update Finished. Success: {count_success}/{len(self.urls)}. New Rules: {total_rules_merged}")
+        self.lbl_status.setText(i18n.get_text("status_done", success=count_success, total=len(self.urls), merged=total_rules_merged))
         self.btn_update.setEnabled(True)
-        QMessageBox.information(self, "Update Complete", f"Successfully updated rules from {count_success} sources.")
+        QMessageBox.information(self, "Update Complete", i18n.get_text("msg_update_success", count=count_success))

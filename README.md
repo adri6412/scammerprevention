@@ -7,10 +7,12 @@ It sits in the system tray and monitors for suspicious behaviors typical of scam
 
 *   **Remote Tool Detection**: Identifies usage of AnyDesk, TeamViewer, UltraViewer, RustDesk, and 15+ other remote control software.
 *   **Context-Aware Banking Protection**: triggering a **CRITICAL RED ALERT** if a Banking Website is opened while a Remote Tool is active.
-*   **Scam Pattern Recognition**: Detects usage of command-line tools used to fake infections (e.g., `tree`, `netstat`, `dir /s`, `eventvwr`).
-*   **Educational Warnings**: The alert screen provides clear, large-text warnings explaining *why* the situation is dangerous (e.g., "Real technicians never ask for passwords").
-*   **Full Screen Block**: A non-intrusive monitoring mode that switches to an aggressive "Always On Top" full-screen warning when a threat is detected.
-*   **Remote Updates**: Supports fetching new detection rules (JSON) from remote URLs (e.g., GitHub, Corporate Server) without reinstalling the app.
+*   **Voice Alerts (TTS)**: Uses Windows built-in voice to loudly warn the user ("Security Alert!").
+*   **Multilingual Support**: Fully localized in **English** and **Italian**.
+*   **Scam Pattern Recognition**: Detects usage of command-line tools used to fake infections (e.g., `tree`, `netstat`, `cipher`).
+*   **Educational Warnings**: The alert screen provides clear, large-text warnings.
+*   **Remote Updates**: Supports fetching new detection rules (JSON) from remote URLs.
+*   **Auto-Start**: Option to automatically start on Windows boot (via Settings).
 
 ## 📦 Installation
 

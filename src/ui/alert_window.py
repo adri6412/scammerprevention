@@ -3,6 +3,14 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QLabel,
                                QPushButton, QHBoxLayout, QApplication)
 from PySide6.QtCore import Qt, Signal
 import psutil
+try:
+    import win32com.client
+    TTS_AVAILABLE = True
+except ImportError:
+    TTS_AVAILABLE = False
+
+from src.utils import i18n
+from src.utils.logger import logger
 
 class AlertWindow(QMainWindow):
     # Signal emitted when user chooses an action
@@ -15,6 +23,15 @@ class AlertWindow(QMainWindow):
         self.process_pid = process_pid
 
         self.init_ui()
+        self.play_tts_alert()
+
+    def play_tts_alert(self):
+        if TTS_AVAILABLE:
+            try:
+                speaker = win32com.client.Dispatch("SAPI.SpVoice")
+                speaker.Speak(i18n.get_text("tts_alert"))
+            except Exception as e:
+                logger.error(f"TTS Error: {e}")
 
     def init_ui(self):
         # Window flags to make it full screen and always on top
@@ -30,20 +47,15 @@ class AlertWindow(QMainWindow):
         central_widget.setLayout(layout)
 
         if "BANKING" in self.threat_type:
-             header_text = "CRITICAL SECURITY RISK"
-             sub_text = "BANKING DATA AT RISK"
+             header_text = i18n.get_text("alert_bank_header")
+             sub_text = i18n.get_text("alert_bank_sub")
              start_color = "#8B0000" # Deep Red
-             warning_tips = "We detected a Remote Tool accessing your Bank.\nThis is ALWAYS a SCAM. BLOCK IT NOW."
+             warning_tips = i18n.get_text("alert_bank_tips")
         else:
-             header_text = "SECURITY WARNING"
-             sub_text = "REMOTE ACCESS TOOL DETECTED"
+             header_text = i18n.get_text("alert_rat_header")
+             sub_text = i18n.get_text("alert_rat_sub")
              start_color = "#CC8800" # Orange-ish for warning
-             warning_tips = (
-                 "HOW TO SPOT A SCAMMER:\n"
-                 "• A REAL technician will NEVER ask for your passwords.\n"
-                 "• A REAL technician will NEVER ask you to log into your bank.\n"
-                 "• A REAL technician will NEVER ask for Gift Cards (Google Play, Amazon)."
-             )
+             warning_tips = i18n.get_text("alert_rat_tips")
 
         central_widget.setStyleSheet(f"background-color: {start_color}; color: white;")
 
@@ -72,14 +84,14 @@ class AlertWindow(QMainWindow):
         layout.addWidget(warning_box)
 
         # Details
-        details_label = QLabel(f"\nDetails: {self.threat_details}\n")
+        details_label = QLabel(f"\n{i18n.get_text('alert_details', details=self.threat_details)}\n")
         details_label.setStyleSheet("font-size: 24px;")
         details_label.setAlignment(Qt.AlignCenter)
         details_label.setWordWrap(True)
         layout.addWidget(details_label)
 
         # Question
-        question = QLabel("Is someone unexpected trying to control your computer?")
+        question = QLabel(i18n.get_text("alert_question"))
         question.setStyleSheet("font-size: 28px; font-weight: bold; margin-bottom: 20px;")
         question.setAlignment(Qt.AlignCenter)
         layout.addWidget(question)
@@ -89,7 +101,7 @@ class AlertWindow(QMainWindow):
         btn_layout.setSpacing(50)
         
         # Block Button (Big and Clear)
-        self.btn_block = QPushButton("⛔ BLOCK CONNECTION (Recommended)")
+        self.btn_block = QPushButton(i18n.get_text("btn_block"))
         self.btn_block.setCursor(Qt.PointingHandCursor)
         self.btn_block.setStyleSheet("""
             QPushButton {
@@ -108,7 +120,7 @@ class AlertWindow(QMainWindow):
         btn_layout.addWidget(self.btn_block)
 
         # Ignore Button (Smaller)
-        self.btn_ignore = QPushButton("I am doing this myself (Ignore)")
+        self.btn_ignore = QPushButton(i18n.get_text("btn_ignore"))
         self.btn_ignore.setCursor(Qt.PointingHandCursor)
         self.btn_ignore.setStyleSheet("""
             QPushButton {
@@ -138,9 +150,9 @@ class AlertWindow(QMainWindow):
             except psutil.TimeoutExpired:
                 p.kill() # Force kill
             
-            print(f"Process {self.process_pid} killed by user.")
+            logger.info(f"Process {self.process_pid} killed by user.")
         except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-            print(f"Failed to kill process: {e}")
+            logger.error(f"Failed to kill process: {e}")
         
         self.close()
         self.action_taken.emit("BLOCK")
