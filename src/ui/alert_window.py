@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QLabel, 
                                QPushButton, QHBoxLayout, QApplication)
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 import psutil
 try:
     import win32com.client
@@ -23,13 +23,15 @@ class AlertWindow(QMainWindow):
         self.process_pid = process_pid
 
         self.init_ui()
-        self.play_tts_alert()
+        # Delay TTS slightly to ensure window is fully visible first
+        QTimer.singleShot(200, self.play_tts_alert)
 
     def play_tts_alert(self):
         if TTS_AVAILABLE:
             try:
                 speaker = win32com.client.Dispatch("SAPI.SpVoice")
-                speaker.Speak(i18n.get_text("tts_alert"))
+                # 1 = SVSFlagsAsync (Create async voice so it doesn't block UI)
+                speaker.Speak(i18n.get_text("tts_alert"), 1)
             except Exception as e:
                 logger.error(f"TTS Error: {e}")
 
