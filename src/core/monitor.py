@@ -16,11 +16,17 @@ class SystemMonitor(QThread):
         self.running = True
         self.monitor_interval = 2  # Seconds
         self.ignored_pids = set() # PIDs that user explicitly allowed
+        self.phishing_cooldown = 0 # Timestamp until when phishing scan is snoozed
 
     def add_ignored_pid(self, pid):
         """User accepted this process, do not alert again unless context changes critically."""
         print(f"Monitor: Adding PID {pid} to ignore list.")
         self.ignored_pids.add(pid)
+
+    def snooze_phishing(self, seconds=20):
+        """Pause phishing detection for a short while."""
+        self.phishing_cooldown = time.time() + seconds
+        print(f"Monitor: Snoozing phishing detection for {seconds} seconds.")
 
     def run(self):
         print("ElderlyMonitor: Background Service Started")
@@ -127,6 +133,10 @@ class SystemMonitor(QThread):
         """Check the browser URL for phishing/fraud."""
         # Only check if the detector has the module enabled
         if not hasattr(self.detector, 'phishing'):
+            return
+
+        # Check for snooze
+        if time.time() < self.phishing_cooldown:
             return
 
         url = self.detector.phishing.get_browser_url()

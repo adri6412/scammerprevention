@@ -13,6 +13,8 @@ class PhishingDetector:
             "chrome.exe": "Address and search bar",
             "msedge.exe": "Address and search bar", # Edge might be different depending on version
             "firefox.exe": "Search with Google or enter address", # Firefox automation id is usually 'urlbar-input'
+            "brave.exe": "Address and search bar",
+            "opera.exe": "Address and search bar"
         }
 
     def load_rules(self, rules_data):
@@ -39,32 +41,79 @@ class PhishingDetector:
             except:
                 return None
 
+            # DEBUG: Uncomment to see what window is in focus
+            # print(f"DEBUG: Focused App: {proc_name}")
+
             if proc_name not in self.browsers:
                 return None
+            
+            # print(f"DEBUG: Browser Detected: {proc_name}")
 
-            # Optimization: Look for Edit control directly
-            # This is a basic implementation. Browsers update UI often, so this might need robust finding.
-            # Chrome/Edge usually have name 'Address and search bar' or ControlType=Edit
+            # STRATEGY: Brute-force Walk.
+            # Modern browsers are complex trees. The URL bar might be an Edit, a Text, or a Custom element.
+            # We walk the tree and stop at the FIRST element that contains a valid-looking URL.
+            # We limit depth to avoid performance issues.
             
-            # fast search for Edit control
-            address_bar = window.EditControl(searchDepth=4, Name=self.browsers.get(proc_name))
-            if not address_bar.Exists(0, 0):
-                # Fallback: search any edit control that looks like a URL
-                # Firefox uses 'Page Address' or similar sometimes
-                address_bar = window.EditControl(searchDepth=5) 
+            found_url = None
             
-            if address_bar.Exists(0, 0):
-                url_value = address_bar.GetValuePattern().Value
-                # Clean up: browsers sometimes show "Search google for..." or empty
-                if "." in url_value and " " not in url_value:
-                    if not url_value.startswith("http"):
-                        url_value = "https://" + url_value
-                    return url_value
+            # Helper to check if string is URL
+            def is_likely_url(text):
+                if not text or len(text) < 4:
+                    return False
+                # Must have dot, no spaces (or limited spaces if it's "Search ...")
+                # But we want strict URL for phishing check.
+                if " " in text:
+                    return False
+                if "." not in text:
+                    return False
+                # Exclude common false positives
+                if text.lower().endswith(".exe") or text.lower().endswith(".dll"):
+                    return False
+                return True
+
+            count = 0
+            # Walk depth 10 is usually enough to find the address bar in Chrome/Brave
+            for control, depth in auto.WalkControl(window, maxDepth=10):
+                count += 1
+                if count > 500: # Safety break
+                    break
+                
+                # Check ValuePattern (Editable text)
+                try:
+                    # Note: GetValuePattern() might throw if pattern not supported
+                    # But checking properties is safer?
+                    # In python uiautomation, valid controls usually expose pattern methods
+                    # We try specific pattern
+                    val = control.GetValuePattern().Value
+                    if is_likely_url(val):
+                        found_url = val
+                        # print(f"DEBUG: Found URL via ValuePattern in {control.ControlTypeName}: {val}")
+                        break
+                except:
+                    pass
+
+                # Check Name (sometimes generic UI exposes URL as name)
+                # But usually Name is "Address and search bar", not the URL itself.
+                # However, for 'Text' controls (static URL display), Name IS the content.
+                if is_likely_url(control.Name):
+                     # Double check it's not the window title itself?
+                     # Window Name is usually "Page Title - Browser Name"
+                     if " - " not in control.Name:
+                         found_url = control.Name
+                         # print(f"DEBUG: Found URL via Name in {control.ControlTypeName}: {found_url}")
+                         break
             
+            if found_url:
+                # Normalize
+                if not found_url.startswith("http"):
+                    found_url = "https://" + found_url
+                return found_url
+
+            # print(f"DEBUG: Scanned {count} controls, no URL found.")
             return None
 
         except Exception as e:
-            # logger.debug(f"UI Automation error: {e}")
+            print(f"DEBUG: UI Automation error: {e}")
             return None
 
     def check_url(self, url):

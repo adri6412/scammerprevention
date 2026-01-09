@@ -87,6 +87,11 @@ class ElderlyMonitorApp:
 
     def handle_alert_action(self, action, pid):
         if action == "IGNORE":
+            # Check if this was a Phishing alert that the user acknowledged
+            if self.current_alert and "PHISHING" in self.current_alert.threat_type:
+                 # Snooze phishing detection for 20 seconds to give user time to close tab
+                 self.monitor.snooze_phishing(20)
+            
             logger.info(f"User ignored threat for PID {pid}")
             self.monitor.add_ignored_pid(pid)
 
