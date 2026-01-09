@@ -53,6 +53,11 @@ class AlertWindow(QMainWindow):
              sub_text = i18n.get_text("alert_bank_sub")
              start_color = "#8B0000" # Deep Red
              warning_tips = i18n.get_text("alert_bank_tips")
+        elif "PHISHING" in self.threat_type:
+             header_text = i18n.get_text("alert_phishing_header")
+             sub_text = i18n.get_text("alert_phishing_sub")
+             start_color = "#B22222" # FireBrick Red
+             warning_tips = i18n.get_text("alert_phishing_tips")
         else:
              header_text = i18n.get_text("alert_rat_header")
              sub_text = i18n.get_text("alert_rat_sub")
@@ -93,52 +98,80 @@ class AlertWindow(QMainWindow):
         layout.addWidget(details_label)
 
         # Question
-        question = QLabel(i18n.get_text("alert_question"))
-        question.setStyleSheet("font-size: 28px; font-weight: bold; margin-bottom: 20px;")
-        question.setAlignment(Qt.AlignCenter)
-        layout.addWidget(question)
+        # Different question for phishing
+        q_text = i18n.get_text("alert_question")
+        if "PHISHING" in self.threat_type:
+            q_text = "" # No generic question needed, tips are enough
+
+        if q_text:
+            question = QLabel(q_text)
+            question.setStyleSheet("font-size: 28px; font-weight: bold; margin-bottom: 20px;")
+            question.setAlignment(Qt.AlignCenter)
+            layout.addWidget(question)
 
         # Buttons
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(50)
         
-        # Block Button (Big and Clear)
-        self.btn_block = QPushButton(i18n.get_text("btn_block"))
-        self.btn_block.setCursor(Qt.PointingHandCursor)
-        self.btn_block.setStyleSheet("""
-            QPushButton {
-                background-color: white; 
-                color: #8B0000; 
-                font-size: 24px; 
-                padding: 20px; 
-                border-radius: 10px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #FFCCCC;
-            }
-        """)
-        self.btn_block.clicked.connect(self.on_block)
-        btn_layout.addWidget(self.btn_block)
+        if "PHISHING" in self.threat_type:
+            # Special Button for Phishing: "I Understand (Close Site)" - effectively ignores/closes alert
+            self.btn_understand = QPushButton(i18n.get_text("btn_understand"))
+            self.btn_understand.setCursor(Qt.PointingHandCursor)
+            self.btn_understand.setStyleSheet("""
+                QPushButton {
+                    background-color: white; 
+                    color: #006400; 
+                    font-size: 24px; 
+                    padding: 20px; 
+                    border-radius: 10px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #CCFFCC;
+                }
+            """)
+            self.btn_understand.clicked.connect(self.on_ignore) # Treat as ignore (close window)
+            btn_layout.addWidget(self.btn_understand)
+        
+        else:
+            # Standard RAT/Banking Buttons
+            # Block Button (Big and Clear)
+            self.btn_block = QPushButton(i18n.get_text("btn_block"))
+            self.btn_block.setCursor(Qt.PointingHandCursor)
+            self.btn_block.setStyleSheet("""
+                QPushButton {
+                    background-color: white; 
+                    color: #8B0000; 
+                    font-size: 24px; 
+                    padding: 20px; 
+                    border-radius: 10px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #FFCCCC;
+                }
+            """)
+            self.btn_block.clicked.connect(self.on_block)
+            btn_layout.addWidget(self.btn_block)
 
-        # Ignore Button (Smaller)
-        self.btn_ignore = QPushButton(i18n.get_text("btn_ignore"))
-        self.btn_ignore.setCursor(Qt.PointingHandCursor)
-        self.btn_ignore.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; 
-                color: #CCCCCC; 
-                font-size: 16px; 
-                border: 1px solid #CCCCCC; 
-                padding: 10px; 
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-            }
-        """)
-        self.btn_ignore.clicked.connect(self.on_ignore)
-        btn_layout.addWidget(self.btn_ignore)
+            # Ignore Button (Smaller)
+            self.btn_ignore = QPushButton(i18n.get_text("btn_ignore"))
+            self.btn_ignore.setCursor(Qt.PointingHandCursor)
+            self.btn_ignore.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent; 
+                    color: #CCCCCC; 
+                    font-size: 16px; 
+                    border: 1px solid #CCCCCC; 
+                    padding: 10px; 
+                    border-radius: 5px;
+                }
+                QPushButton:hover {
+                    background-color: rgba(255, 255, 255, 0.1);
+                }
+            """)
+            self.btn_ignore.clicked.connect(self.on_ignore)
+            btn_layout.addWidget(self.btn_ignore)
 
         layout.addLayout(btn_layout)
 

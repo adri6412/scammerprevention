@@ -28,6 +28,7 @@ class SystemMonitor(QThread):
             try:
                 self.scan_processes()
                 self.scan_windows()
+                self.scan_phishing()
             except Exception as e:
                 print(f"Monitor Loop Error: {e}")
             
@@ -121,3 +122,26 @@ class SystemMonitor(QThread):
         except (psutil.AccessDenied, psutil.NoSuchProcess):
             return False # Can't inspect, assume safe or handle otherwise
         return False
+
+    def scan_phishing(self):
+        """Check the browser URL for phishing/fraud."""
+        # Only check if the detector has the module enabled
+        if not hasattr(self.detector, 'phishing'):
+            return
+
+        url = self.detector.phishing.get_browser_url()
+        if not url:
+            return
+
+        status, reason = self.detector.phishing.check_url(url)
+        
+        if status == "PHISHING":
+            # CRITICAL ALERT
+            self.threat_detected.emit("PHISHING_CRITICAL", f"Known Dangerous Site: {url}", 0) 
+            # 0 as PID means we might not kill the browser but just block screen?
+            # Or we try to kill the browser process found by uiautomation?
+            # For now passing 0. AlertWindow handles it.
+        
+        elif status == "SUSPICIOUS":
+            # WARNING ALERT
+            self.threat_detected.emit("PHISHING_WARNING", f"Suspicious Site: {url}\nReason: {reason}", 0)

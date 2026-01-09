@@ -7,6 +7,7 @@ It sits in the system tray and monitors for suspicious behaviors typical of scam
 
 *   **Remote Tool Detection**: Identifies usage of AnyDesk, TeamViewer, UltraViewer, RustDesk, and 15+ other remote control software.
 *   **Context-Aware Banking Protection**: triggering a **CRITICAL RED ALERT** if a Banking Website is opened while a Remote Tool is active.
+*   **Fake Site Protection (Anti-Phishing)**: Detects if you are visiting a suspicious "Login" or "Banking" site that is not in the safe list (e.g., fake PayPal/Bank logins).
 *   **Voice Alerts (TTS)**: Uses Windows built-in voice to loudly warn the user ("Security Alert!").
 *   **Multilingual Support**: Fully localized in **English** and **Italian**.
 *   **Scam Pattern Recognition**: Detects usage of command-line tools used to fake infections (e.g., `tree`, `netstat`, `cipher`).

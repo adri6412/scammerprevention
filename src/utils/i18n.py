@@ -22,11 +22,15 @@ STRINGS = {
             "• A REAL technician will NEVER ask you to log into your bank.\n"
             "• A REAL technician will NEVER ask for Gift Cards."
         ),
+        "alert_phishing_header": "FAKE WEBSITE DETECTED",
+        "alert_phishing_sub": "DO NOT ENTER YOUR PASSWORD",
+        "alert_phishing_tips": "This website looks suspicious and might be trying to steal your data.\nIt is NOT in your Safe List.",
         "alert_bank_tips": "We detected a Remote Tool accessing your Bank.\nThis is ALWAYS a SCAM. BLOCK IT NOW.",
         "alert_details": "Details: {details}",
         "alert_question": "Is someone unexpected trying to control your computer?",
         "btn_block": "⛔ BLOCK CONNECTION (Recommended)",
         "btn_ignore": "I am doing this myself (Ignore)",
+        "btn_understand": "✅ I UNDERSTAND (I will close the site)",
         "settings_title": "Settings - ElderlyMonitor",
         "lbl_manrules": "Manage Protection Rule Sources (JSON URLs)",
         "btn_remove_url": "Remove Selected URL",
@@ -55,11 +59,15 @@ STRINGS = {
             "• Un VERO tecnico non ti chiede MAI di accedere alla banca.\n"
             "• Un VERO tecnico non chiede MAI Buoni Regalo (Amazon/Google)."
         ),
+        "alert_phishing_header": "SITO FALSO RILEVATO",
+        "alert_phishing_sub": "NON INSERIRE PASSWORD",
+        "alert_phishing_tips": "Questo sito sembra sospetto e potrebbe rubare i tuoi dati.\nNON è nella lista dei siti Sicuri.",
         "alert_bank_tips": "Rilevato strumento remoto sul sito della Banca.\nÈ QUASI CERTAMENTE UNA TRUFFA. BLOCCA ORA.",
         "alert_details": "Dettagli: {details}",
         "alert_question": "Qualcuno sta controllando il tuo computer?",
         "btn_block": "⛔ BLOCCA CONNESSIONE (Consigliato)",
         "btn_ignore": "Sto operando io (Ignora)",
+        "btn_understand": "✅ HO CAPITO (Chiudo il sito)",
         "settings_title": "Impostazioni - ElderlyMonitor",
         "lbl_manrules": "Gestione Sorgenti Regole (URL JSON)",
         "btn_remove_url": "Rimuovi URL Selezionato",

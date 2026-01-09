@@ -1,4 +1,5 @@
 {
+    "version": 20240101,
     "rats": [
         "Supremo.exe",
         "rustdesk.exe",
@@ -69,5 +70,51 @@
         "sc start",
         "syskey",
         "netstat.*"
+    ],
+    "safe_domains": [
+        "google.com",
+        "facebook.com",
+        "amazon.com",
+        "amazon.it",
+        "youtube.com",
+        "wikipedia.org",
+        "twitter.com",
+        "instagram.com",
+        "linkedin.com",
+        "poste.it",
+        "intesasanpaolo.com",
+        "unicredit.it",
+        "paypal.com",
+        "microsoft.com",
+        "live.com",
+        "apple.com",
+        "netflix.com",
+        "bancaditalia.it",
+        "finecobank.com",
+        "ing.it",
+        "hype.it",
+        "revolut.com"
+    ],
+    "phishing_keywords": [
+        "login",
+        "signin",
+        "accesso",
+        "accedi",
+        "verify",
+        "verifica",
+        "secure",
+        "sicurezza",
+        "account",
+        "conto",
+        "update",
+        "aggiorna",
+        "confirm",
+        "conferma",
+        "wallet",
+        "banking",
+        "bonifico"
+    ],
+    "phishing_domains": [
+        "example.com"
     ]
 }

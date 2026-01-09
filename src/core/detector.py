@@ -1,13 +1,9 @@
 import re
 import json
 import os
-import requests
-
-import re
-import json
-import os
 import sys
 import requests
+from src.core.phishing import PhishingDetector
 
 if getattr(sys, 'frozen', False):
     # Running as compiled exe: use the executable directory for storage
@@ -23,6 +19,7 @@ SETTINGS_FILE = os.path.join(DATA_DIR, 'settings.json')
 class Detector:
     def __init__(self):
         self.ensure_data_dir()
+        self.phishing = PhishingDetector()
         
         # Default Hardcoded Rules (Fallback)
         self.rules = {
@@ -45,7 +42,10 @@ class Detector:
             "suspicious_cmds": [
                 r'tree.*', r'dir\s*/s', r'netstat.*', 
                 r'eventvwr', r'assoc', r'syskey'
-            ]
+            ],
+            "safe_domains": [],
+            "phishing_domains": [],
+            "phishing_keywords": []
         }
         
         # Load local overrides if they exist
@@ -74,6 +74,10 @@ class Detector:
                     print("Rules loaded and merged from rules.json")
             except Exception as e:
                 print(f"Failed to load rules.json: {e}")
+        
+        # Propagate to phishing module
+        if hasattr(self, 'phishing'):
+            self.phishing.load_rules(self.rules)
 
     def save_rules(self):
         """Save current rules to disk."""
