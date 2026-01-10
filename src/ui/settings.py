@@ -99,7 +99,7 @@ class SettingsWindow(QWidget):
         # Add URL Section
         add_layout = QHBoxLayout()
         self.input_url = QLineEdit()
-        self.input_url.setPlaceholderText("https://example.com/scam_rules.json")
+        self.input_url.setPlaceholderText("https://.../rules.json OR .txt / .lst")
         add_layout.addWidget(self.input_url)
         
         btn_add = QPushButton(i18n.get_text("btn_add_url"))
@@ -188,20 +188,42 @@ class SettingsWindow(QWidget):
             try:
                 response = requests.get(url, timeout=10)
                 if response.status_code == 200:
-                    new_rules = response.json()
-                    
-                    # Merge Logic
-                    # We expect keys: "rats", "banking_keywords", "suspicious_cmds"
-                    for key in self.detector.rules:
-                        if key in new_rules and isinstance(new_rules[key], list):
-                            before = len(self.detector.rules[key])
-                            # Union
-                            current_set = set(self.detector.rules[key])
-                            new_items = set(new_rules[key])
-                            self.detector.rules[key] = list(current_set.union(new_items))
+                    try:
+                        # Try parsing as JSON (Standard Format)
+                        new_rules = response.json()
+                        
+                        # Merge Logic for JSON
+                        for key in self.detector.rules:
+                            if key in new_rules and isinstance(new_rules[key], list):
+                                before = len(self.detector.rules[key])
+                                current_set = set(self.detector.rules[key])
+                                new_items = set(new_rules[key])
+                                self.detector.rules[key] = list(current_set.union(new_items))
+                                
+                                total_rules_merged += (len(self.detector.rules[key]) - before)
+                                
+                    except ValueError:
+                        # Fallback: Parse as raw text list (Phishing Domains)
+                        # Assumes line-separated domains
+                        print(f"JSON parse failed for {url}, trying as text list...")
+                        content = response.text
+                        domains = [line.strip() for line in content.splitlines() if line.strip() and not line.strip().startswith('#')]
+                        
+                        if domains:
+                            target_key = "phishing_domains"
+                            # Ensure key exists
+                            if target_key not in self.detector.rules:
+                                self.detector.rules[target_key] = []
                             
-                            total_rules_merged += (len(self.detector.rules[key]) - before)
-                    
+                            before = len(self.detector.rules[target_key])
+                            current_set = set(self.detector.rules[target_key])
+                            current_set.update(domains)
+                            self.detector.rules[target_key] = list(current_set)
+                            
+                            added = len(self.detector.rules[target_key]) - before
+                            total_rules_merged += added
+                            print(f"Merged {added} new domains from text list.")
+
                     count_success += 1
                 else:
                     print(f"Failed to fetch {url}: {response.status_code}")
