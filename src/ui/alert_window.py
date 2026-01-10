@@ -176,19 +176,33 @@ class AlertWindow(QMainWindow):
         layout.addLayout(btn_layout)
 
     def on_block(self):
-        # Kill the suspicious process
+        # Kill the suspicious process tree
+        # Strategy: Get the name of the process, then kill ALL instances of it.
+        # This handles multi-process apps like AnyDesk/TeamViewer.
+        target_name = None
         try:
             p = psutil.Process(self.process_pid)
-            p.terminate() # Try graceful first
-            try:
-                p.wait(timeout=1)
-            except psutil.TimeoutExpired:
-                p.kill() # Force kill
-            
-            logger.info(f"Process {self.process_pid} killed by user.")
-        except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-            logger.error(f"Failed to kill process: {e}")
-        
+            target_name = p.name()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            logger.error(f"Process {self.process_pid} already dead or inaccessible.")
+
+        # If we found the name, kill everything with that name
+        if target_name:
+            for proc in psutil.process_iter(['pid', 'name']):
+                try:
+                    if proc.info['name'] == target_name:
+                         proc.kill()
+                         logger.info(f"Killed related process: {proc.info['name']} (PID: {proc.info['pid']})")
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+        else:
+            # Fallback: Just try to kill the PID blindly if we couldn't get the name
+             try:
+                p = psutil.Process(self.process_pid)
+                p.kill()
+             except:
+                 pass
+
         self.close()
         self.action_taken.emit("BLOCK")
 

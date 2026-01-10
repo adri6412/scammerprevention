@@ -4,6 +4,7 @@ import win32gui
 import win32process
 from PySide6.QtCore import QThread, Signal
 from src.core.detector import Detector
+from src.utils import i18n
 
 class SystemMonitor(QThread):
     # Signal emitted when a threat is detected
@@ -17,6 +18,8 @@ class SystemMonitor(QThread):
         self.monitor_interval = 2  # Seconds
         self.ignored_pids = set() # PIDs that user explicitly allowed
         self.phishing_cooldown = 0 # Timestamp until when phishing scan is snoozed
+        self.last_alerted_url = None # Track last alerted URL to avoid loop
+        self.paused_until = 0 # Global pause timestamp
 
     def add_ignored_pid(self, pid):
         """User accepted this process, do not alert again unless context changes critically."""
@@ -28,10 +31,20 @@ class SystemMonitor(QThread):
         self.phishing_cooldown = time.time() + seconds
         print(f"Monitor: Snoozing phishing detection for {seconds} seconds.")
 
+    def pause_scanning(self, seconds=10):
+        """Pause all monitoring for a short while (e.g. after a kill action)."""
+        self.paused_until = time.time() + seconds
+        print(f"Monitor: Pausing all scanning for {seconds} seconds.")
+
     def run(self):
         print("ElderlyMonitor: Background Service Started")
         while self.running:
             try:
+                # Global pause check
+                if time.time() < self.paused_until:
+                    time.sleep(1)
+                    continue
+
                 self.scan_processes()
                 self.scan_windows()
                 self.scan_phishing()
@@ -141,17 +154,29 @@ class SystemMonitor(QThread):
 
         url = self.detector.phishing.get_browser_url()
         if not url:
+            # If focus lost or no URL, we might want to reset? 
+            # Or keep memory to avoid warning when switching quickly between notepad and browser?
+            # Let's keep memory if it's just 'None'.
+            # But if user closed tab?
+            return
+
+        # DEDUPLICATION: If we already alerted on this EXACT URL, do not spam.
+        if url == self.last_alerted_url:
             return
 
         status, reason = self.detector.phishing.check_url(url)
         
         if status == "PHISHING":
+            self.last_alerted_url = url
             # CRITICAL ALERT
             self.threat_detected.emit("PHISHING_CRITICAL", f"Known Dangerous Site: {url}", 0) 
-            # 0 as PID means we might not kill the browser but just block screen?
-            # Or we try to kill the browser process found by uiautomation?
-            # For now passing 0. AlertWindow handles it.
         
         elif status == "SUSPICIOUS":
+            self.last_alerted_url = url
             # WARNING ALERT
-            self.threat_detected.emit("PHISHING_WARNING", f"Suspicious Site: {url}\nReason: {reason}", 0)
+            self.threat_detected.emit("PHISHING_WARNING", i18n.get_text("toast_phishing_body"), 0)
+        
+        else:
+            # Site is safe or unknown-but-ok.
+            # Reset the alerted URL so if user goes BACK to the bad site, we warn again.
+            self.last_alerted_url = None

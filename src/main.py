@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.core.monitor import SystemMonitor
 from src.ui.alert_window import AlertWindow
+from src.ui.toast import ToastNotification
 from src.ui.settings import SettingsWindow, SETTINGS_PATH
 from src.utils import i18n
 from src.utils.logger import logger
@@ -80,7 +81,23 @@ class ElderlyMonitorApp:
 
         logger.warning(f"THREAT DETECTED: {details}")
         
-        # Show the Red Screen
+        # DIFFERENTIAL ALERTING
+        if threat_type == "PHISHING_WARNING":
+            # Low confidence / Keyword match -> Show unobtrusive Toast
+            # We don't block the screen, just warn.
+            title = i18n.get_text("toast_phishing_title")
+            message = i18n.get_text("toast_phishing_body")
+            
+            # Use the new generic friendly message, ignore the raw detail
+            toast = ToastNotification(title, message)
+            toast.show_toast()
+            
+            # We must store reference to prevent garbage collection?
+            # Toast auto-closes but if garbage collected instantly it might disappear.
+            self.last_toast = toast 
+            return
+
+        # Show the Red Screen (Critical)
         self.current_alert = AlertWindow(threat_type, details, pid)
         self.current_alert.action_taken.connect(lambda action: self.handle_alert_action(action, pid))
         self.current_alert.show()
@@ -94,6 +111,16 @@ class ElderlyMonitorApp:
             
             logger.info(f"User ignored threat for PID {pid}")
             self.monitor.add_ignored_pid(pid)
+        
+        elif action == "BLOCK":
+            # User chose to block (kill) the process.
+            # We add it to ignore list immediately to prevent the background monitor 
+            # from detecting it again while it is terminating (race condition).
+            logger.info(f"User blocked threat for PID {pid}. Adding to ignore list during termination.")
+            self.monitor.add_ignored_pid(pid)
+            
+            # Global pause to prevent alert loops while system cleans up
+            self.monitor.pause_scanning(10)
 
 
     def run(self):
