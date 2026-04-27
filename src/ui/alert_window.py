@@ -81,7 +81,7 @@ class AlertWindow(QMainWindow):
              warning_tips = i18n.get_text("alert_rat_tips")
              font_scale = 0.6  # Scale down fonts for smaller window
 
-        central_widget.setStyleSheet(f"background-color: {start_color}; color: white; border: 4px solid red;")
+        central_widget.setStyleSheet(f"background-color: {start_color}; color: white; ")
 
         header = QLabel(f"⚠️ {header_text} ⚠️")
         header.setStyleSheet(f"font-size: {int(48 * font_scale)}px; font-weight: bold; color: yellow;")

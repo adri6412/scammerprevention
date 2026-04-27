@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (QWizard, QWizardPage, QVBoxLayout, QLabel,
-                                 QComboBox, QLineEdit, QApplication)
+                                 QComboBox, QLineEdit, QApplication, QGraphicsOpacityEffect)
+from PySide6.QtCore import Qt, QPropertyAnimation
 from PySide6.QtCore import Qt
 import os
 import json
@@ -23,6 +24,61 @@ class WelcomePage(QWizardPage):
     def initializePage(self):
         self.title_label.setText(i18n.get_text("wizard_welcome_title"))
         self.desc_label.setText(i18n.get_text("wizard_welcome_text"))
+
+
+class FeaturePage(QWizardPage):
+    def __init__(self, title_key, desc_key):
+        super().__init__()
+        self.title_key = title_key
+        self.desc_key = desc_key
+        self.layout = QVBoxLayout(self)
+
+        self.title_label = QLabel()
+        self.title_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #004d99;")
+        self.layout.addWidget(self.title_label)
+
+        self.desc_label = QLabel()
+        self.desc_label.setWordWrap(True)
+        self.desc_label.setStyleSheet("font-size: 15px; margin-top: 15px;")
+        self.layout.addWidget(self.desc_label)
+
+        # Set up opacity effects for animation
+        self.title_opacity = QGraphicsOpacityEffect()
+        self.title_label.setGraphicsEffect(self.title_opacity)
+
+        self.desc_opacity = QGraphicsOpacityEffect()
+        self.desc_label.setGraphicsEffect(self.desc_opacity)
+
+        self.title_anim = QPropertyAnimation(self.title_opacity, b"opacity")
+        self.title_anim.setDuration(500)
+        self.title_anim.setStartValue(0)
+        self.title_anim.setEndValue(1)
+
+        self.desc_anim = QPropertyAnimation(self.desc_opacity, b"opacity")
+        self.desc_anim.setDuration(800)
+        self.desc_anim.setStartValue(0)
+        self.desc_anim.setEndValue(1)
+
+    def initializePage(self):
+        self.title_label.setText(i18n.get_text(self.title_key))
+        self.desc_label.setText(i18n.get_text(self.desc_key))
+        # Reset and start animation
+        self.title_opacity.setOpacity(0)
+        self.desc_opacity.setOpacity(0)
+        self.title_anim.start()
+        self.desc_anim.start()
+
+class Feature1Page(FeaturePage):
+    def __init__(self):
+        super().__init__("wizard_feat1_title", "wizard_feat1_text")
+
+class Feature2Page(FeaturePage):
+    def __init__(self):
+        super().__init__("wizard_feat2_title", "wizard_feat2_text")
+
+class Feature3Page(FeaturePage):
+    def __init__(self):
+        super().__init__("wizard_feat3_title", "wizard_feat3_text")
 
 class LanguagePage(QWizardPage):
     def __init__(self):
@@ -109,11 +165,17 @@ class SetupWizard(QWizard):
         self.resize(600, 400)
 
         self.welcome_page = WelcomePage()
+        self.feat1_page = Feature1Page()
+        self.feat2_page = Feature2Page()
+        self.feat3_page = Feature3Page()
         self.lang_page = LanguagePage()
         self.rules_page = RulesPage()
         self.finish_page = FinishPage()
 
         self.addPage(self.welcome_page)
+        self.addPage(self.feat1_page)
+        self.addPage(self.feat2_page)
+        self.addPage(self.feat3_page)
         self.addPage(self.lang_page)
         self.addPage(self.rules_page)
         self.addPage(self.finish_page)
