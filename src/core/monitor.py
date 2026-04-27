@@ -74,9 +74,11 @@ class SystemMonitor(QThread):
                     # If it's just running, maybe warn? 
                     # For now, we report it. The UI decides if it's a "Critical Alert" based on context (like banking).
                     # We need to know if it has active network connections to be "Active".
-                    if self.has_active_connections(proc):
+                    active_ips = self.get_active_ips(proc)
+                    if active_ips:
+                        ip_list_str = ", ".join(active_ips)
                         # Use a slightly less scary message if it's just the tool
-                        self.threat_detected.emit("RAT_ACTIVE", f"Remote Support Tool Detected: {p_name}", p_pid)
+                        self.threat_detected.emit("RAT_ACTIVE", f"Remote Support Tool Detected: {p_name} (Connected to: {ip_list_str})", p_pid)
                         # We add to ignore list immediately to prevent spamming while the UI is open? 
                         # No, the UI handles deduplication.
 
@@ -133,14 +135,22 @@ class SystemMonitor(QThread):
 
     def has_active_connections(self, proc):
         """Check if process has established external network connections."""
+        return len(self.get_active_ips(proc)) > 0
+
+    def get_active_ips(self, proc):
+        """Returns a list of remote IPs this process is connected to."""
+        ips = set()
         try:
             connections = proc.connections(kind='inet')
             for conn in connections:
                 if conn.status == 'ESTABLISHED':
-                    return True
+                    if hasattr(conn, 'raddr') and conn.raddr and hasattr(conn.raddr, 'ip'):
+                        # Exclude localhost connections if needed, but for RATs it might be useful to see all external
+                        if conn.raddr.ip != '127.0.0.1':
+                            ips.add(conn.raddr.ip)
         except (psutil.AccessDenied, psutil.NoSuchProcess):
-            return False # Can't inspect, assume safe or handle otherwise
-        return False
+            pass # Can't inspect, assume safe or handle otherwise
+        return list(ips)
 
     def scan_phishing(self):
         """Check the browser URL for phishing/fraud."""
@@ -166,7 +176,11 @@ class SystemMonitor(QThread):
 
         status, reason = self.detector.phishing.check_url(url)
         
-        if status == "PHISHING":
+        if status == "RAT_DOWNLOAD":
+            self.last_alerted_url = url
+            self.threat_detected.emit("RAT_DOWNLOAD_WARNING", "You are visiting a Remote Tool download site.", 0)
+
+        elif status == "PHISHING":
             self.last_alerted_url = url
             # CRITICAL ALERT
             self.threat_detected.emit("PHISHING_CRITICAL", f"Known Dangerous Site: {url}", 0) 

@@ -22,6 +22,7 @@ class PhishingDetector:
         self.whitelist = set(rules_data.get("safe_domains", []))
         self.blocklist = set(rules_data.get("phishing_domains", []))
         self.keywords = rules_data.get("phishing_keywords", [])
+        self.rat_downloads = set(rules_data.get("rat_download_domains", []))
 
     def get_browser_url(self):
         """
@@ -132,6 +133,11 @@ class PhishingDetector:
         except:
             return "SAFE", None # Parse error
 
+        # RAT Download Check
+        for rat_domain in self.rat_downloads:
+            if domain == rat_domain or domain.endswith("." + rat_domain):
+                return "RAT_DOWNLOAD", f"Remote Tool Download: {domain}"
+
         # 1. Blocklist
         if domain in self.blocklist:
             return "PHISHING", f"Known Dangerous Domain: {domain}"
@@ -159,8 +165,24 @@ class PhishingDetector:
             suspicion_score += 5
             reason.append(f"Suspicious keyword '{found_kw}'")
 
+        # Typosquatting Check against whitelist
+        # We check if the domain is very similar to a whitelisted domain
+        for safe_domain in self.whitelist:
+            # Check length similarity first to avoid unnecessary Levenshtein distance calculations
+            if abs(len(domain) - len(safe_domain)) <= 2:
+                dist = Levenshtein.distance(domain, safe_domain)
+                # If distance is small but not exactly 0 (which would be caught by whitelist check earlier)
+                # Distance of 1 or 2 is considered typosquatting for most domains, especially short ones
+                # For very short domains (e.g. g.co), we might want to be careful, but we'll use dist <= 2
+                if 0 < dist <= 2:
+                    suspicion_score += 10
+                    reason.append(f"Typosquatting of '{safe_domain}'")
+                    break
+
         # Basic Check: If it contains a keyword but is NOT whitelisted -> Suspicious
-        if suspicion_score > 0:
+        if suspicion_score >= 10:
+             return "PHISHING", ", ".join(reason)
+        elif suspicion_score > 0:
              return "SUSPICIOUS", ", ".join(reason)
 
         return "SAFE", None

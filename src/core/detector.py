@@ -45,7 +45,11 @@ class Detector:
             ],
             "safe_domains": [],
             "phishing_domains": [],
-            "phishing_keywords": []
+            "phishing_keywords": [],
+            "rat_download_domains": [
+                "anydesk.com", "teamviewer.com", "rustdesk.com",
+                "supremocontrol.com", "logmein.com", "ultraviewer.net"
+            ]
         }
         
         # Load local overrides if they exist
