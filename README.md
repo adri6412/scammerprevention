@@ -5,6 +5,11 @@ It sits in the system tray and monitors for suspicious behaviors typical of scam
 
 ## 🚀 Key Features
 
+*   **Panic Button**: Press `Ctrl+Alt+S` to instantly kill all active browsers and known remote control software in an emergency.
+*   **Clipboard Protection**: Actively monitors the clipboard and clears known malicious commands (e.g., PowerShell scripts) often copy-pasted during scams.
+*   **Emergency Email Alerts (SMTP)**: Configure an emergency contact email to receive immediate notifications when critical threats (like Banking+RAT) are detected.
+*   **Threat Logging & Screenshots**: Automatically saves a timestamped screenshot and text log in the `data/logs` folder whenever a threat triggers an alert.
+*   **Unobtrusive Warnings**: Uses non-blocking "Toast" notifications for lower severity risks (like suspicious but unconfirmed phishing sites or downloading a RAT installer).
 *   **Remote Tool Detection**: Identifies usage of AnyDesk, TeamViewer, UltraViewer, RustDesk, and 15+ other remote control software.
 *   **Context-Aware Banking Protection**: triggering a **CRITICAL RED ALERT** if a Banking Website is opened while a Remote Tool is active.
 *   **Fake Site Protection (Anti-Phishing)**: Detects if you are visiting a suspicious "Login" or "Banking" site that is not in the safe list (e.g., fake PayPal/Bank logins).
