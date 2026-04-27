@@ -13,6 +13,11 @@ from src.ui.toast import ToastNotification
 from src.ui.settings import SettingsWindow, SETTINGS_PATH
 from src.utils import i18n
 from src.utils.logger import logger
+from src.utils.mailer import send_alert_email
+import datetime
+import threading
+import keyboard
+from PySide6.QtGui import QScreen
 
 class ElderlyMonitorApp:
     def __init__(self):
@@ -51,6 +56,17 @@ class ElderlyMonitorApp:
         self.monitor = SystemMonitor()
         self.monitor.threat_detected.connect(self.show_alert)
         self.monitor.start()
+
+        # Clipboard Monitor
+        self.clipboard = QApplication.clipboard()
+        self.clipboard.dataChanged.connect(self.check_clipboard)
+
+        # Panic Button Hook (Ctrl+Alt+S)
+        try:
+            keyboard.add_hotkey('ctrl+alt+s', self.execute_panic_mode)
+            logger.info("Panic button hotkey (Ctrl+Alt+S) registered successfully.")
+        except Exception as e:
+            logger.error(f"Failed to register panic button hotkey: {e}")
 
         # Store alert reference to prevent garbage collection
         self.current_alert = None
@@ -97,10 +113,110 @@ class ElderlyMonitorApp:
             self.last_toast = toast 
             return
 
+        elif threat_type == "RAT_DOWNLOAD_WARNING":
+            title = i18n.get_text("toast_rat_download_title")
+            message = i18n.get_text("toast_rat_download_body")
+
+            toast = ToastNotification(title, message)
+            toast.show_toast()
+            self.last_toast = toast
+            return
+
+        # Send Email Alert (Async) if Critical
+        if "BANKING_RISK" in threat_type or "PHISHING_CRITICAL" in threat_type:
+            threading.Thread(target=send_alert_email, args=(threat_type, details), daemon=True).start()
+
+        # Log and Screenshot before showing the Red Screen
+        self.log_and_screenshot(threat_type, details)
+
         # Show the Red Screen (Critical)
         self.current_alert = AlertWindow(threat_type, details, pid)
         self.current_alert.action_taken.connect(lambda action: self.handle_alert_action(action, pid))
         self.current_alert.show()
+
+    def log_and_screenshot(self, threat_type, details):
+        """Creates a screenshot and saves a log entry to data/logs."""
+        try:
+            # Running as compiled exe or source
+            if getattr(sys, 'frozen', False):
+                base_dir = os.path.dirname(sys.executable)
+            else:
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            logs_dir = os.path.join(base_dir, 'data', 'logs')
+            if not os.path.exists(logs_dir):
+                os.makedirs(logs_dir)
+
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_file = os.path.join(logs_dir, "threats.log")
+
+            # Write text log
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write(f"[{timestamp}] TYPE: {threat_type} | DETAILS: {details}\n")
+
+            # Take Screenshot
+            screen = self.app.primaryScreen()
+            if screen:
+                screenshot = screen.grabWindow(0)
+                img_path = os.path.join(logs_dir, f"screenshot_{timestamp}.png")
+                screenshot.save(img_path, 'png')
+                logger.info(f"Screenshot saved to {img_path}")
+
+        except Exception as e:
+            logger.error(f"Failed to log/screenshot threat: {e}")
+
+    def check_clipboard(self):
+        try:
+            text = self.clipboard.text().lower()
+            if not text:
+                return
+
+            # Check for suspicious strings often used by scammers to copy-paste into cmd/powershell
+            suspicious_keywords = ["powershell", "certutil", "invoke-webrequest", "iex(", "wscript", "cscript"]
+
+            for keyword in suspicious_keywords:
+                if keyword in text:
+                    logger.warning(f"Suspicious clipboard content detected and cleared: {text[:50]}...")
+                    self.clipboard.clear()
+
+                    # Show toast warning
+                    title = "⚠️ Appunti Sospetti / Suspicious Clipboard"
+                    message = "Un comando potenzialmente pericoloso è stato rimosso dagli appunti.\nA potentially dangerous command was removed from the clipboard."
+                    toast = ToastNotification(title, message)
+                    toast.show_toast()
+                    self.last_toast = toast
+                    break
+        except Exception as e:
+            logger.error(f"Error checking clipboard: {e}")
+
+    def execute_panic_mode(self):
+        """Silently and aggressively kills all known browsers and remote control software."""
+        logger.warning("PANIC MODE ACTIVATED via hotkey! Killing browsers and RATs...")
+
+        import psutil
+
+        target_processes = [
+            # Browsers
+            "chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe", "iexplore.exe",
+            # RATs
+            "teamviewer.exe", "anydesk.exe", "tv_w32.exe", "tv_x64.exe",
+            "supremo.exe", "logmein.exe", "vncviewer.exe", "screenconnect.windowsclient.exe",
+            "lmi_rescue.exe", "zohoassist.exe", "splashtop.exe", "rustdesk.exe",
+            "ultraviewer.exe", "ammyy.exe", "alpemix.exe", "showmypc.exe", "mikogo.exe"
+        ]
+
+        killed_count = 0
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                proc_name = proc.info['name']
+                if proc_name and proc_name.lower() in target_processes:
+                    proc.kill()
+                    killed_count += 1
+                    logger.info(f"Panic Mode killed: {proc_name} (PID: {proc.info['pid']})")
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+
+        logger.info(f"Panic Mode finished. Killed {killed_count} processes.")
 
     def handle_alert_action(self, action, pid):
         if action == "IGNORE":

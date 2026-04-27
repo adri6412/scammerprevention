@@ -117,9 +117,93 @@ class SettingsWindow(QWidget):
         self.btn_update.clicked.connect(self.run_update)
         layout.addWidget(self.btn_update)
         
+        # --- Email / SMTP Settings ---
+        grp_email = QGroupBox("Email Alerts (SMTP)")
+        email_layout = QVBoxLayout()
+
+        self.chk_email_enabled = QCheckBox("Enable Email Alerts")
+        email_layout.addWidget(self.chk_email_enabled)
+
+        self.input_smtp_server = QLineEdit()
+        self.input_smtp_server.setPlaceholderText("SMTP Server (e.g. smtp.gmail.com)")
+        email_layout.addWidget(self.input_smtp_server)
+
+        self.input_smtp_port = QLineEdit()
+        self.input_smtp_port.setPlaceholderText("Port (e.g. 587)")
+        email_layout.addWidget(self.input_smtp_port)
+
+        self.input_smtp_user = QLineEdit()
+        self.input_smtp_user.setPlaceholderText("Username / Email")
+        email_layout.addWidget(self.input_smtp_user)
+
+        self.input_smtp_pass = QLineEdit()
+        self.input_smtp_pass.setPlaceholderText("Password / App Password")
+        self.input_smtp_pass.setEchoMode(QLineEdit.Password)
+        email_layout.addWidget(self.input_smtp_pass)
+
+        self.input_smtp_recipient = QLineEdit()
+        self.input_smtp_recipient.setPlaceholderText("Recipient Email (Emergency Contact)")
+        email_layout.addWidget(self.input_smtp_recipient)
+
+        # Load SMTP settings if they exist
+        self.load_smtp_settings()
+
+        btn_save_email = QPushButton("Save Email Settings")
+        btn_save_email.clicked.connect(self.save_smtp_settings)
+        email_layout.addWidget(btn_save_email)
+
+        grp_email.setLayout(email_layout)
+        layout.addWidget(grp_email)
+
         # Status Label
         self.lbl_status = QLabel(i18n.get_text("status_ready"))
         layout.addWidget(self.lbl_status)
+
+    def load_smtp_settings(self):
+        if os.path.exists(SETTINGS_PATH):
+            try:
+                with open(SETTINGS_PATH, 'r') as f:
+                    data = json.load(f)
+                    smtp = data.get('smtp', {})
+                    self.chk_email_enabled.setChecked(smtp.get('enabled', False))
+                    self.input_smtp_server.setText(smtp.get('server', ''))
+                    self.input_smtp_port.setText(str(smtp.get('port', '')))
+                    self.input_smtp_user.setText(smtp.get('user', ''))
+                    self.input_smtp_pass.setText(smtp.get('password', ''))
+                    self.input_smtp_recipient.setText(smtp.get('recipient', ''))
+            except:
+                pass
+
+    def save_smtp_settings(self):
+        port_str = self.input_smtp_port.text().strip()
+        port = int(port_str) if port_str.isdigit() else 587
+
+        smtp_data = {
+            'enabled': self.chk_email_enabled.isChecked(),
+            'server': self.input_smtp_server.text().strip(),
+            'port': port,
+            'user': self.input_smtp_user.text().strip(),
+            'password': self.input_smtp_pass.text().strip(),
+            'recipient': self.input_smtp_recipient.text().strip()
+        }
+
+        # Read existing to keep other settings
+        data = {}
+        if os.path.exists(SETTINGS_PATH):
+            try:
+                with open(SETTINGS_PATH, 'r') as f:
+                    data = json.load(f)
+            except:
+                pass
+
+        data['smtp'] = smtp_data
+
+        try:
+            with open(SETTINGS_PATH, 'w') as f:
+                json.dump(data, f, indent=4)
+            QMessageBox.information(self, "Success", "Email settings saved successfully.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save settings: {e}")
 
     def on_startup_changed(self, state):
         is_checked = (state == Qt.Checked.value) # PySide6 enum or int
