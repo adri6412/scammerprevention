@@ -47,7 +47,20 @@ STRINGS = {
         "grp_general": "General Settings",
         "lbl_language": "Language / Lingua:",
         "chk_startup": "Run automatically when Windows starts",
-        "tts_alert": "Security Alert! Do not close this window. Potential scam detected."
+        "tts_alert": "Security Alert! Do not close this window. Potential scam detected.",
+        "wizard_title": "ElderlyMonitor Setup",
+        "wizard_welcome_title": "Welcome to ElderlyMonitor",
+        "wizard_welcome_text": "ElderlyMonitor protects your computer from scams.\n\nIt monitors your system for malicious remote access tools and dangerous actions, alerting you if it detects a potential threat.\n\nLet's set it up!",
+        "wizard_lang_title": "Select Language",
+        "wizard_lang_text": "Please select your preferred language:",
+        "wizard_rules_title": "Configure Rules URL",
+        "wizard_rules_text": "ElderlyMonitor needs a rules file to detect threats.\nYou can provide a URL to download rules from.",
+        "wizard_rules_placeholder": "https://.../rules.json",
+        "wizard_finish_title": "Setup Complete",
+        "wizard_finish_text": "ElderlyMonitor is now configured and will protect you in the background.",
+        "btn_next": "Next",
+        "btn_back": "Back",
+        "btn_finish": "Finish"
     },
     "it": {
         "tray_tooltip": "ElderlyMonitor: Protetto",
@@ -88,7 +101,20 @@ STRINGS = {
         "grp_general": "Impostazioni Generali",
         "lbl_language": "Lingua / Language:",
         "chk_startup": "Avvia automaticamente con Windows",
-        "tts_alert": "Attenzione! Avviso di sicurezza. Possibile truffa in corso. Non chiudere questa finestra."
+        "tts_alert": "Attenzione! Avviso di sicurezza. Possibile truffa in corso. Non chiudere questa finestra.",
+        "wizard_title": "Configurazione ElderlyMonitor",
+        "wizard_welcome_title": "Benvenuto in ElderlyMonitor",
+        "wizard_welcome_text": "ElderlyMonitor protegge il tuo computer dalle truffe.\n\nMonitora il tuo sistema alla ricerca di strumenti di accesso remoto dannosi e azioni pericolose, avvisandoti se rileva una potenziale minaccia.\n\nIniziamo la configurazione!",
+        "wizard_lang_title": "Seleziona Lingua",
+        "wizard_lang_text": "Seleziona la tua lingua preferita:",
+        "wizard_rules_title": "Configura URL Regole",
+        "wizard_rules_text": "ElderlyMonitor ha bisogno di un file di regole per rilevare le minacce.\nPuoi fornire un URL per scaricare le regole.",
+        "wizard_rules_placeholder": "https://.../rules.json",
+        "wizard_finish_title": "Configurazione Completata",
+        "wizard_finish_text": "ElderlyMonitor è ora configurato e ti proteggerà in background.",
+        "btn_next": "Avanti",
+        "btn_back": "Indietro",
+        "btn_finish": "Fine"
     }
 }
 

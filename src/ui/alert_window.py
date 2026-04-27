@@ -36,9 +36,23 @@ class AlertWindow(QMainWindow):
                 logger.error(f"TTS Error: {e}")
 
     def init_ui(self):
-        # Window flags to make it full screen and always on top
+        is_warning_only = ("BANKING" not in self.threat_type and "PHISHING" not in self.threat_type)
+
+        # Window flags
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
-        self.showFullScreen()
+
+        if is_warning_only:
+            # Show as large notification bottom-left
+            screen = QApplication.primaryScreen()
+            screen_geom = screen.availableGeometry()
+            width = int(screen_geom.width() * 0.4)  # 40% of screen width
+            height = int(screen_geom.height() * 0.4) # 40% of screen height
+            # Bottom Left with padding
+            x = 20
+            y = screen_geom.height() - height - 20
+            self.setGeometry(x, y, width, height)
+        else:
+            self.showFullScreen()
         
         # Main Widget and Layout
         central_widget = QWidget()
@@ -53,46 +67,52 @@ class AlertWindow(QMainWindow):
              sub_text = i18n.get_text("alert_bank_sub")
              start_color = "#8B0000" # Deep Red
              warning_tips = i18n.get_text("alert_bank_tips")
+             font_scale = 1.0
         elif "PHISHING" in self.threat_type:
              header_text = i18n.get_text("alert_phishing_header")
              sub_text = i18n.get_text("alert_phishing_sub")
              start_color = "#B22222" # FireBrick Red
              warning_tips = i18n.get_text("alert_phishing_tips")
+             font_scale = 1.0
         else:
              header_text = i18n.get_text("alert_rat_header")
              sub_text = i18n.get_text("alert_rat_sub")
              start_color = "#CC8800" # Orange-ish for warning
              warning_tips = i18n.get_text("alert_rat_tips")
+             font_scale = 0.6  # Scale down fonts for smaller window
 
-        central_widget.setStyleSheet(f"background-color: {start_color}; color: white;")
+        central_widget.setStyleSheet(f"background-color: {start_color}; color: white; border: 4px solid red;")
 
         header = QLabel(f"⚠️ {header_text} ⚠️")
-        header.setStyleSheet("font-size: 48px; font-weight: bold; color: yellow;")
+        header.setStyleSheet(f"font-size: {int(48 * font_scale)}px; font-weight: bold; color: yellow;")
         header.setAlignment(Qt.AlignCenter)
+        header.setWordWrap(True)
         layout.addWidget(header)
 
         sub_header = QLabel(sub_text)
-        sub_header.setStyleSheet("font-size: 32px; font-weight: bold;")
+        sub_header.setStyleSheet(f"font-size: {int(32 * font_scale)}px; font-weight: bold;")
         sub_header.setAlignment(Qt.AlignCenter)
+        sub_header.setWordWrap(True)
         layout.addWidget(sub_header)
 
         # Scam Warnings Box
         warning_box = QLabel(warning_tips)
-        warning_box.setStyleSheet("""
+        warning_box.setStyleSheet(f"""
             background-color: rgba(0, 0, 0, 0.3);
             color: #FFFFE0;
-            font-size: 20px;
+            font-size: {int(20 * font_scale)}px;
             font-weight: bold;
-            padding: 20px;
+            padding: {int(20 * font_scale)}px;
             border-radius: 10px;
-            margin: 20px;
+            margin: {int(20 * font_scale)}px;
         """)
         warning_box.setAlignment(Qt.AlignCenter)
+        warning_box.setWordWrap(True)
         layout.addWidget(warning_box)
 
         # Details
         details_label = QLabel(f"\n{i18n.get_text('alert_details', details=self.threat_details)}\n")
-        details_label.setStyleSheet("font-size: 24px;")
+        details_label.setStyleSheet(f"font-size: {int(24 * font_scale)}px;")
         details_label.setAlignment(Qt.AlignCenter)
         details_label.setWordWrap(True)
         layout.addWidget(details_label)
@@ -105,8 +125,9 @@ class AlertWindow(QMainWindow):
 
         if q_text:
             question = QLabel(q_text)
-            question.setStyleSheet("font-size: 28px; font-weight: bold; margin-bottom: 20px;")
+            question.setStyleSheet(f"font-size: {int(28 * font_scale)}px; font-weight: bold; margin-bottom: {int(20 * font_scale)}px;")
             question.setAlignment(Qt.AlignCenter)
+            question.setWordWrap(True)
             layout.addWidget(question)
 
         # Buttons
@@ -138,18 +159,18 @@ class AlertWindow(QMainWindow):
             # Block Button (Big and Clear)
             self.btn_block = QPushButton(i18n.get_text("btn_block"))
             self.btn_block.setCursor(Qt.PointingHandCursor)
-            self.btn_block.setStyleSheet("""
-                QPushButton {
+            self.btn_block.setStyleSheet(f"""
+                QPushButton {{
                     background-color: white; 
                     color: #8B0000; 
-                    font-size: 24px; 
-                    padding: 20px; 
+                    font-size: {int(24 * font_scale)}px;
+                    padding: {int(20 * font_scale)}px;
                     border-radius: 10px;
                     font-weight: bold;
-                }
-                QPushButton:hover {
+                }}
+                QPushButton:hover {{
                     background-color: #FFCCCC;
-                }
+                }}
             """)
             self.btn_block.clicked.connect(self.on_block)
             btn_layout.addWidget(self.btn_block)
@@ -157,23 +178,27 @@ class AlertWindow(QMainWindow):
             # Ignore Button (Smaller)
             self.btn_ignore = QPushButton(i18n.get_text("btn_ignore"))
             self.btn_ignore.setCursor(Qt.PointingHandCursor)
-            self.btn_ignore.setStyleSheet("""
-                QPushButton {
+            self.btn_ignore.setStyleSheet(f"""
+                QPushButton {{
                     background-color: transparent; 
                     color: #CCCCCC; 
-                    font-size: 16px; 
+                    font-size: {int(16 * font_scale)}px;
                     border: 1px solid #CCCCCC; 
-                    padding: 10px; 
+                    padding: {int(10 * font_scale)}px;
                     border-radius: 5px;
-                }
-                QPushButton:hover {
+                }}
+                QPushButton:hover {{
                     background-color: rgba(255, 255, 255, 0.1);
-                }
+                }}
             """)
             self.btn_ignore.clicked.connect(self.on_ignore)
             btn_layout.addWidget(self.btn_ignore)
 
         layout.addLayout(btn_layout)
+
+        # Show explicitly if we didn't show fullscreen earlier
+        if is_warning_only:
+            self.show()
 
     def on_block(self):
         # Kill the suspicious process tree

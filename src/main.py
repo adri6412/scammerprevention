@@ -11,6 +11,7 @@ from src.core.monitor import SystemMonitor
 from src.ui.alert_window import AlertWindow
 from src.ui.toast import ToastNotification
 from src.ui.settings import SettingsWindow, SETTINGS_PATH
+from src.ui.wizard import SetupWizard
 from src.utils import i18n
 from src.utils.logger import logger
 from src.utils.mailer import send_alert_email
@@ -21,10 +22,11 @@ from PySide6.QtGui import QScreen
 
 class ElderlyMonitorApp:
     def __init__(self):
-        self.load_initial_language()
-        
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False) # Keep running even if alert closes
+
+        self.check_first_run()
+        self.load_initial_language()
 
         # Create System Tray Icon
         if os.path.exists("icon.png"):
@@ -73,6 +75,14 @@ class ElderlyMonitorApp:
         self.settings_window = None
 
         logger.info("ElderlyMonitor started. Check tray icon.")
+
+    def check_first_run(self):
+        if not os.path.exists(SETTINGS_PATH):
+            wizard = SetupWizard()
+            if wizard.exec():
+                pass # Setup complete
+            else:
+                sys.exit(0) # Setup cancelled
 
     def load_initial_language(self):
         try:
